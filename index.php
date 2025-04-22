@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Traffic Analysis API Tester</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; }
+    section { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1.5rem; }
+    label, input, select { display: block; margin: 0.5rem 0; width: 100%; }
+    input[type="submit"], button { padding: 0.5rem 1rem; }
+    pre { background: #f5f5f5; padding: 0.5rem; max-height: 150px; overflow: auto; }
+    #previewSection { display: none; margin-top: 1rem; }
+    #previewImage { max-width: 100%; height: auto; border: 1px solid #ccc; }
+    .status { margin-top: 1rem; padding: 0.5rem; background: #f0f0f0; }
+  </style>
+</head>
+<body>
+
+  <!-- Base URL -->
+  <section>
+    <h2>API Base URL</h2>
+    <label for="apiUrl">Enter your FastAPI URL:</label>
+    <input type="text" id="apiUrl"
+           placeholder="https://abcd1234.ngrok.io"
+           value="http://127.0.0.1:8000">
+  </section>
+
+  <!-- Live Preview Section -->
+  <section id="previewSection">
+    <h2>Live Preview</h2>
+    <img id="previewImage" src="" alt="Live Preview">
+    <div class="status" id="previewStatus">Not connected</div>
+  </section>
+
+  <!-- 1. Upload Video -->
+  <section id="uploadSection">
+    <h2>1. Upload Video</h2>
+    <input type="file" id="uploadFile">
+    <button id="uploadBtn">Upload</button>
+    <pre id="uploadResult"></pre>
+  </section>
+
+  <!-- 2. Speed Analysis -->
+  <section id="speedSection">
+    <h2>2. Trigger Speed Analysis</h2>
+    <label>Video Filename:<input type="text" id="speed_video_filename" value="video.mp4"></label>
+    <label>Line 1 (x1,y1;x2,y2):<input type="text" id="speed_line1" value="423,431;854,414"></label>
+    <label>Line 2 (x1,y1;x2,y2):<input type="text" id="speed_line2" value="1346,377;951,388"></label>
+    <label>Polygon (x,y;…):<input type="text" id="speed_polygon"
+          value="9,791;3,702;57,609;247,470;464,355;564,314;640,264;884,256;1174,247;1283,329;1460,444;1586,541;1913,825;1909,1070;5,1070;1,802"></label>
+    <label>Speed Source (x,y;…):<input type="text" id="speed_source"
+          value="669,241;1171,235;1913,834;3,814"></label>
+    <label>Target Width:<input type="number" id="speed_tw" value="21"></label>
+    <label>Target Height:<input type="number" id="speed_th" value="70"></label>
+    <label>Frame Skip:<input type="number" id="speed_fs" value="3"></label>
+    <button id="speedBtn">Start Speed Analysis</button>
+    <pre id="speedResult"></pre>
+  </section>
+
+  <!-- 3. Screenline (CSV) Analysis -->
+  <section id="screenSection">
+    <h2>3. Trigger CSV Analysis</h2>
+    <label>Video Filename:<input type="text" id="csv_video_filename" value="video.mp4"></label>
+    <label>Line 1:<input type="text" id="csv_line1" value="423,431;854,414"></label>
+    <label>Line 2:<input type="text" id="csv_line2" value="1346,377;951,388"></label>
+    <label>Polygon:<input type="text" id="csv_polygon"
+          value="9,791;3,702;57,609;247,470;464,355;564,314;640,264;884,256;1174,247;1283,329;1460,444;1586,541;1913,825;1909,1070;5,1070;1,802"></label>
+    <label>Video Start Time:<input type="text" id="csv_video_start_time_str" value="18:23:29"></label>
+    <label>Frame Skip:<input type="number" id="csv_fs" value="3"></label>
+    <button id="csvBtn">Start CSV Analysis</button>
+    <pre id="csvResult"></pre>
+  </section>
+
+  <!-- 4. Pedestrian Flow Analysis -->
+  <section id="pedSection">
+    <h2>4. Trigger Pedestrian Analysis</h2>
+    <label>Video Filename:<input type="text" id="ped_video_filename" value="people_video.mp4"></label>
+    <label>Line Pts:<input type="text" id="ped_line_pts" value="258,198;422,193"></label>
+    <label>Polygon:<input type="text" id="ped_polygon" value="236,84;426,80;451,336;242,339"></label>
+    <label>Video Start Time:<input type="text" id="ped_video_start_time_str" value="09:15:00"></label>
+    <label>Frame Skip:<input type="number" id="ped_fs" value="1"></label>
+    <button id="pedBtn">Start Pedestrian Analysis</button>
+    <pre id="pedResult"></pre>
+  </section>
+
+  <!-- 5. Speed‑Only (No Lines) Analysis -->
+  <section id="noLineSection">
+    <h2>5. Trigger Speed‑Only (No Lines) Analysis</h2>
+    <label>Video Filename:
+      <input type="text" id="noLine_video_filename" value="video.mp4">
+    </label>
+    <label>Polygon (x,y;…):
+      <input type="text" id="noLine_polygon"
+             value="9,791;3,702;57,609;247,470;464,355;564,314;640,264;884,256;1174,247;1283,329;1460,444;1586,541;1913,825;1909,1070;5,1070;1,802">
+    </label>
+    <label>Speed Source (x,y;…):
+      <input type="text" id="noLine_speed_source"
+             value="669,241;1171,235;1913,834;3,814">
+    </label>
+    <label>Target Width:
+      <input type="number" id="noLine_target_width" value="21">
+    </label>
+    <label>Target Height:
+      <input type="number" id="noLine_target_height" value="70">
+    </label>
+    <label>Frame Skip:
+      <input type="number" id="noLine_frame_skip" value="3">
+    </label>
+    <button id="noLineBtn">Start No‑Line Speed Analysis</button>
+    <pre id="noLineResult"></pre>
+  </section>
+
+  <!-- 6. Download Links -->
+  <section id="downloadSection">
+    <h2>6. Download Results</h2>
+    <label>Video Filename:<input type="text" id="dl_video" value="speed_only.mp4"></label>
+    <button id="dlVideoBtn">Get Video Link</button>
+    <div id="dlVideoLink"></div>
+
+    <label>CSV Filename:<input type="text" id="dl_csv" value="flow_rates.csv"></label>
+    <button id="dlCsvBtn">Get CSV Link</button>
+    <div id="dlCsvLink"></div>
+  </section>
+
+  <script>
+    // Utility to get the trimmed base URL
+    function getBaseUrl() {
+      return document.getElementById('apiUrl').value.replace(/\/+$/, '');
+    }
+
+    // Generic POST helper using fetch + FormData :contentReference[oaicite:1]{index=1}
+    async function postForm(endpoint, formData, resultElem) {
+      try {
+        const res = await fetch(getBaseUrl() + endpoint, {
+          method: 'POST',
+          body: formData
+        });
+        const json = await res.json();
+        resultElem.textContent = JSON.stringify(json, null, 2);
+      } catch (err) {
+        resultElem.textContent = 'Error: ' + err;
+      }
+    }
+
+    // Upload
+    document.getElementById('uploadBtn').onclick = async () => {
+      const fileInput = document.getElementById('uploadFile');
+      const resultElem = document.getElementById('uploadResult');
+      
+      if (!fileInput.files || fileInput.files.length === 0) {
+        resultElem.textContent = 'Error: Please select a file to upload';
+        return;
+      }
+
+      const file = fileInput.files[0];
+      console.log('Selected file:', file.name, 'Size:', file.size, 'Type:', file.type);
+      
+      const fd = new FormData();
+      fd.append('file', fileInput.files[0]);
+      postForm('/upload_video', fd, document.getElementById('uploadResult'));
+    };
+
+    // WebSocket connection handling
+    let ws = null;
+    let currentAnalysisId = null;
+
+    function connectWebSocket(analysisId) {
+      // Close existing connection if any
+      if (ws) {
+        ws.close();
+      }
+
+      // Show preview section
+      document.getElementById('previewSection').style.display = 'block';
+      document.getElementById('previewStatus').textContent = 'Connecting...';
+
+      // Get WebSocket URL
+      const wsUrl = getBaseUrl().replace('http', 'ws') + `/ws/${analysisId}`;
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        document.getElementById('previewStatus').textContent = 'Connected';
+        currentAnalysisId = analysisId;
+      };
+
+      ws.onmessage = (event) => {
+        document.getElementById('previewImage').src = `data:image/jpeg;base64,${event.data}`;
+      };
+
+      ws.onclose = () => {
+        document.getElementById('previewStatus').textContent = 'Disconnected';
+        currentAnalysisId = null;
+      };
+
+      ws.onerror = (error) => {
+        document.getElementById('previewStatus').textContent = 'Error: ' + error.message;
+      };
+    }
+
+    // Modified Speed Analysis handler
+    document.getElementById('speedBtn').onclick = async () => {
+      const fd = new FormData();
+      
+      // Get all required fields
+      const fields = {
+        'video_filename': document.getElementById('speed_video_filename'),
+        'line1': document.getElementById('speed_line1'),
+        'line2': document.getElementById('speed_line2'),
+        'polygon': document.getElementById('speed_polygon'),
+        'speed_source': document.getElementById('speed_source'),
+        'target_width': document.getElementById('speed_tw'),
+        'target_height': document.getElementById('speed_th'),
+        'frame_skip': document.getElementById('speed_fs')
+      };
+
+      // Check if all fields exist and have values
+      for (const [key, element] of Object.entries(fields)) {
+        if (!element) {
+          document.getElementById('speedResult').textContent = `Error: Field ${key} not found`;
+          return;
+        }
+        if (!element.value) {
+          document.getElementById('speedResult').textContent = `Error: ${key} is required`;
+          return;
+        }
+        fd.append(key, element.value);
+      }
+
+      try {
+        const response = await fetch(getBaseUrl() + '/process_speed_analysis', {
+          method: 'POST',
+          body: fd
+        });
+        const data = await response.json();
+        document.getElementById('speedResult').textContent = JSON.stringify(data, null, 2);
+        
+        // Connect to WebSocket for live preview
+        if (data.analysis_id) {
+          connectWebSocket(data.analysis_id);
+        }
+      } catch (err) {
+        document.getElementById('speedResult').textContent = 'Error: ' + err;
+      }
+    };
+
+    // CSV Analysis
+    document.getElementById('csvBtn').onclick = async () => {
+      const fd = new FormData();
+      ['video_filename','line1','line2','polygon','video_start_time_str','frame_skip']
+        .forEach(id => {
+          const elementId = 'csv_' + (id === 'frame_skip' ? 'fs' : id);
+          fd.append(id, document.getElementById(elementId).value);
+        });
+      
+      try {
+        const response = await fetch(getBaseUrl() + '/process_screenline_analysis', {
+          method: 'POST',
+          body: fd
+        });
+        const data = await response.json();
+        document.getElementById('csvResult').textContent = JSON.stringify(data, null, 2);
+        
+        // Connect to WebSocket for live preview
+        if (data.analysis_id) {
+          connectWebSocket(data.analysis_id);
+        }
+      } catch (err) {
+        document.getElementById('csvResult').textContent = 'Error: ' + err;
+      }
+    };
+
+    // Pedestrian Analysis
+    document.getElementById('pedBtn').onclick = async () => {
+      const fd = new FormData();
+      ['video_filename','line_pts','polygon','video_start_time_str','frame_skip']
+        .forEach(id => {
+          const elementId = 'ped_' + (id === 'frame_skip' ? 'fs' : id);
+          fd.append(id, document.getElementById(elementId).value);
+        });
+      
+      try {
+        const response = await fetch(getBaseUrl() + '/process_pedestrian_analysis', {
+          method: 'POST',
+          body: fd
+        });
+        const data = await response.json();
+        document.getElementById('pedResult').textContent = JSON.stringify(data, null, 2);
+        
+        // Connect to WebSocket for live preview
+        if (data.analysis_id) {
+          connectWebSocket(data.analysis_id);
+        }
+      } catch (err) {
+        document.getElementById('pedResult').textContent = 'Error: ' + err;
+      }
+    };
+
+    // 5. No‑Line Speed Analysis
+    document.getElementById('noLineBtn').onclick = async () => {
+      const fd = new FormData();
+      // Append each field
+      fd.append('video_filename',
+          document.getElementById('noLine_video_filename').value);
+      fd.append('polygon',
+          document.getElementById('noLine_polygon').value);
+      fd.append('speed_source',
+          document.getElementById('noLine_speed_source').value);
+      fd.append('target_width',
+          document.getElementById('noLine_target_width').value);
+      fd.append('target_height',
+          document.getElementById('noLine_target_height').value);
+      fd.append('frame_skip',
+          document.getElementById('noLine_frame_skip').value);
+
+      try {
+        const response = await fetch(getBaseUrl() + '/process_speed_no_line_analysis', {
+          method: 'POST',
+          body: fd
+        });
+        const data = await response.json();
+        document.getElementById('noLineResult').textContent = JSON.stringify(data, null, 2);
+        
+        // Connect to WebSocket for live preview
+        if (data.analysis_id) {
+          connectWebSocket(data.analysis_id);
+        }
+      } catch (err) {
+        document.getElementById('noLineResult').textContent = 'Error: ' + err;
+      }
+    };
+
+    // Download links
+    document.getElementById('dlVideoBtn').onclick = () => {
+      const name = document.getElementById('dl_video').value;
+      const url  = `${getBaseUrl()}/download_video?filename=${encodeURIComponent(name)}`;
+      document.getElementById('dlVideoLink').innerHTML =
+        `<a href="${url}" target="_blank">Download ${name}</a>`;
+    };
+    document.getElementById('dlCsvBtn').onclick = () => {
+      const name = document.getElementById('dl_csv').value;
+      const url  = `${getBaseUrl()}/download_csv?filename=${encodeURIComponent(name)}`;
+      document.getElementById('dlCsvLink').innerHTML =
+        `<a href="${url}" target="_blank">Download ${name}</a>`;
+    };
+  </script>
+</body>
+</html>
