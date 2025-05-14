@@ -110,9 +110,59 @@
     <pre id="noLineResult"></pre>
   </section>
 
-  <!-- 6. Download Links -->
+  <!-- 6. CSV‑Only (Optional Line) Analysis -->
+  <section id="csvOptionalSection">
+    <h2>6. Trigger CSV‑Only (Optional Line) Analysis</h2>
+    <label>Video Filename:
+      <input type="text" id="csvOpt_video_filename" value="video.mp4">
+    </label>
+    <label>Line 1 (Optional) (x1,y1;x2,y2):
+      <input type="text" id="csvOpt_line1" value="423,431;854,414">
+    </label>
+    <label>Line 2 (Optional) (x1,y1;x2,y2):
+      <input type="text" id="csvOpt_line2" value="1346,377;951,388">
+    </label>
+    <label>Polygon (x,y;…):
+      <input type="text" id="csvOpt_polygon"
+             value="9,791;3,702;57,609;247,470;464,355;564,314;640,264;884,256;1174,247;1283,329;1460,444;1586,541;1913,825;1909,1070;5,1070;1,802">
+    </label>
+    <label>Video Start Time:
+      <input type="text" id="csvOpt_video_start_time_str" value="00:00:00">
+    </label>
+    <label>Frame Skip:
+      <input type="number" id="csvOpt_frame_skip" value="3">
+    </label>
+    <button id="csvOptBtn">Start CSV‑Only (Optional Line) Analysis</button>
+    <pre id="csvOptResult"></pre>
+  </section>
+
+  <!-- 7. Junction Analysis -->
+  <section id="junctionSection">
+    <h2>7. Trigger Junction Analysis</h2>
+    <label>Video Filename:
+      <input type="text" id="junction_video_filename" value="video.mp4">
+    </label>
+    <label>Input Polygons (x1,y1;x2,y2;x3,y3;x4,y4|x1,y1;x2,y2;x3,y3;x4,y4|...):
+      <input type="text" id="junction_in_polygons" 
+             value="81,594;319,559;408,676;126,711|137,253;386,210;588,357;237,398|1131,377;1621,314;1777,372;1285,442|936,663;1365,589;1701,767;1198,877">
+    </label>
+    <label>Output Polygons (x1,y1;x2,y2;x3,y3;x4,y4|x1,y1;x2,y2;x3,y3;x4,y4|...):
+      <input type="text" id="junction_out_polygons"
+             value="44,483;252,453;310,511;72,541|406,204;509,182;810,355;668,368|1315,457;1837,388;1906,418;1402,516|499,741;902,652;1071,799;609,877">
+    </label>
+    <label>Video Start Time:
+      <input type="text" id="junction_video_start_time_str" value="00:00:00">
+    </label>
+    <label>Frame Skip:
+      <input type="number" id="junction_frame_skip" value="3">
+    </label>
+    <button id="junctionBtn">Start Junction Analysis</button>
+    <pre id="junctionResult"></pre>
+  </section>
+
+  <!-- 8. Download Links -->
   <section id="downloadSection">
-    <h2>6. Download Results</h2>
+    <h2>8. Download Results</h2>
     <label>Video Filename:<input type="text" id="dl_video" value="speed_only.mp4"></label>
     <button id="dlVideoBtn">Get Video Link</button>
     <div id="dlVideoLink"></div>
@@ -120,6 +170,16 @@
     <label>CSV Filename:<input type="text" id="dl_csv" value="flow_rates.csv"></label>
     <button id="dlCsvBtn">Get CSV Link</button>
     <div id="dlCsvLink"></div>
+  </section>
+
+  <!-- 9. Excel Processing -->
+  <section id="excelSection">
+    <h2>9. Process Excel Template</h2>
+    <label>CSV Filename:<input type="text" id="excel_csv" value="flow_rates.csv"></label>
+    <label>Template Filename:<input type="text" id="excel_template" value="template.xlsx"></label>
+    <button id="excelBtn">Process Excel</button>
+    <pre id="excelResult"></pre>
+    <div id="excelDownloadLink"></div>
   </section>
 
   <script>
@@ -329,6 +389,93 @@
       }
     };
 
+    // 6. CSV‑Only (Optional Line) Analysis
+    document.getElementById('csvOptBtn').onclick = async () => {
+      const fd = new FormData();
+      
+      // Get all fields
+      const fields = {
+        'video_filename': document.getElementById('csvOpt_video_filename'),
+        'line1': document.getElementById('csvOpt_line1'),
+        'line2': document.getElementById('csvOpt_line2'),
+        'polygon': document.getElementById('csvOpt_polygon'),
+        'video_start_time_str': document.getElementById('csvOpt_video_start_time_str'),
+        'frame_skip': document.getElementById('csvOpt_frame_skip')
+      };
+
+      // Check if at least one line is provided
+      if (!fields['line1'].value && !fields['line2'].value) {
+        document.getElementById('csvOptResult').textContent = 'Error: At least one of Line 1 or Line 2 must be provided';
+        return;
+      }
+
+      // Append all fields to FormData
+      for (const [key, element] of Object.entries(fields)) {
+        if (element.value) {  // Only append if value exists
+          fd.append(key, element.value);
+        }
+      }
+
+      try {
+        const response = await fetch(getBaseUrl() + '/process_csv_optional_line_analysis', {
+          method: 'POST',
+          body: fd
+        });
+        const data = await response.json();
+        document.getElementById('csvOptResult').textContent = JSON.stringify(data, null, 2);
+        
+        // Connect to WebSocket for live preview
+        if (data.analysis_id) {
+          connectWebSocket(data.analysis_id);
+        }
+      } catch (err) {
+        document.getElementById('csvOptResult').textContent = 'Error: ' + err;
+      }
+    };
+
+    // Junction Analysis
+    document.getElementById('junctionBtn').onclick = async () => {
+      const fd = new FormData();
+      
+      // Get all required fields
+      const fields = {
+        'video_filename': document.getElementById('junction_video_filename'),
+        'in_polygons': document.getElementById('junction_in_polygons'),
+        'out_polygons': document.getElementById('junction_out_polygons'),
+        'video_start_time_str': document.getElementById('junction_video_start_time_str'),
+        'frame_skip': document.getElementById('junction_frame_skip')
+      };
+
+      // Check if all fields exist and have values
+      for (const [key, element] of Object.entries(fields)) {
+        if (!element) {
+          document.getElementById('junctionResult').textContent = `Error: Field ${key} not found`;
+          return;
+        }
+        if (!element.value) {
+          document.getElementById('junctionResult').textContent = `Error: ${key} is required`;
+          return;
+        }
+        fd.append(key, element.value);
+      }
+
+      try {
+        const response = await fetch(getBaseUrl() + '/process_junction_analysis', {
+          method: 'POST',
+          body: fd
+        });
+        const data = await response.json();
+        document.getElementById('junctionResult').textContent = JSON.stringify(data, null, 2);
+        
+        // Connect to WebSocket for live preview
+        if (data.analysis_id) {
+          connectWebSocket(data.analysis_id);
+        }
+      } catch (err) {
+        document.getElementById('junctionResult').textContent = 'Error: ' + err;
+      }
+    };
+
     // Download links
     document.getElementById('dlVideoBtn').onclick = () => {
       const name = document.getElementById('dl_video').value;
@@ -341,6 +488,32 @@
       const url  = `${getBaseUrl()}/download_csv?filename=${encodeURIComponent(name)}`;
       document.getElementById('dlCsvLink').innerHTML =
         `<a href="${url}" target="_blank">Download ${name}</a>`;
+    };
+
+    // Excel Processing
+    document.getElementById('excelBtn').onclick = async () => {
+      const fd = new FormData();
+      fd.append('csv_filename', document.getElementById('excel_csv').value);
+      fd.append('template_filename', document.getElementById('excel_template').value);
+      
+      try {
+        const response = await fetch(getBaseUrl() + '/process_excel', {
+          method: 'POST',
+          body: fd
+        });
+        const data = await response.json();
+        document.getElementById('excelResult').textContent = JSON.stringify(data, null, 2);
+        
+        // Create download link for the processed Excel file
+        if (data.output_excel) {
+          const filename = data.output_excel.split('/').pop();
+          const url = `${getBaseUrl()}/download_excel?filename=${encodeURIComponent(filename)}`;
+          document.getElementById('excelDownloadLink').innerHTML =
+            `<a href="${url}" target="_blank">Download Processed Excel</a>`;
+        }
+      } catch (err) {
+        document.getElementById('excelResult').textContent = 'Error: ' + err;
+      }
     };
   </script>
 </body>
