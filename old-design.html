@@ -91,32 +91,17 @@
     <pre id="junctionResult"></pre>
   </section>
 
-  <!-- 6. Saturation Flow Analysis -->
-  <section id="saturationSection">
-    <h2>6. Saturation Flow Analysis</h2>
-    <label>Video Filename:<input type="text" id="saturation_video_filename" value="video.mp4"></label>
-    <label>Polygon:<input type="text" id="saturation_polygon" 
-          value="873,277;1138,288;230,730;57,602"></label>
-    <label>Video Start Time:<input type="text" id="saturation_video_start_time_str" value="00:00:00"></label>
-    <label>Frame Skip:<input type="number" id="saturation_fs" value="1"></label>
-    <label>In Zone Threshold (seconds):<input type="number" id="saturation_in_zone_threshold" value="3.0" step="0.1"></label>
-    <label>Ignored to Active Threshold (seconds):<input type="number" id="saturation_ignored_to_active_threshold" value="4.0" step="0.1"></label>
-    <label>Exit Timeout Threshold (seconds):<input type="number" id="saturation_exit_timeout_threshold" value="4.0" step="0.1"></label>
-    <button id="saturationBtn">Start Saturation Flow Analysis</button>
-    <pre id="saturationResult"></pre>
-  </section>
-
-  <!-- 7. Download Results -->
+  <!-- 6. Download Results -->
   <section id="downloadSection">
-    <h2>7. Download Results</h2>
+    <h2>6. Download Results</h2>
     <label>Filename:<input type="text" id="dl_filename" value="speed_20240321_123456.mp4"></label>
     <button id="dlBtn">Get Download Link</button>
     <div id="dlLink"></div>
   </section>
 
-  <!-- 8. Delete Files -->
+  <!-- 7. Delete Files -->
   <section id="deleteSection">
-    <h2>8. Delete Files</h2>
+    <h2>7. Delete Files</h2>
     <label>Filename:<input type="text" id="delete_filename" value="speed_20240321_123456.mp4"></label>
     <label>Directory:
       <select id="delete_directory">
@@ -128,9 +113,9 @@
     <pre id="deleteResult"></pre>
   </section>
 
-  <!-- 9. Excel Processing -->
+  <!-- 8. Excel Processing -->
   <section id="excelSection">
-    <h2>9. Process Excel Template</h2>
+    <h2>8. Process Excel Template</h2>
     <label>CSV Filename:<input type="text" id="excel_csv" value="flow_rates.csv"></label>
     <label>Template Filename:<input type="text" id="excel_template" value="template.xlsx"></label>
     <button id="excelBtn">Process Excel</button>
@@ -342,43 +327,6 @@
         }
       } catch (err) {
         document.getElementById('junctionResult').textContent = 'Error: ' + err;
-      }
-    };
-
-    // Saturation Flow Analysis
-    document.getElementById('saturationBtn').onclick = async () => {
-      const fd = new FormData();
-      const fields = {
-        'video_filename': document.getElementById('saturation_video_filename'),
-        'polygon': document.getElementById('saturation_polygon'),
-        'video_start_time_str': document.getElementById('saturation_video_start_time_str'),
-        'frame_skip': document.getElementById('saturation_fs'),
-        'in_zone_threshold': document.getElementById('saturation_in_zone_threshold'),
-        'ignored_to_active_threshold': document.getElementById('saturation_ignored_to_active_threshold'),
-        'exit_timeout_threshold': document.getElementById('saturation_exit_timeout_threshold')
-      };
-
-      for (const [key, element] of Object.entries(fields)) {
-        if (!element.value) {
-          document.getElementById('saturationResult').textContent = `Error: ${key} is required`;
-          return;
-        }
-        fd.append(key, element.value);
-      }
-
-      try {
-        const response = await fetch(getBaseUrl() + '/run_saturation_flow_analysis', {
-          method: 'POST',
-          body: fd
-        });
-        const data = await response.json();
-        document.getElementById('saturationResult').textContent = JSON.stringify(data, null, 2);
-        
-        if (data.analysis_id) {
-          connectWebSocket(data.analysis_id);
-        }
-      } catch (err) {
-        document.getElementById('saturationResult').textContent = 'Error: ' + err;
       }
     };
 
