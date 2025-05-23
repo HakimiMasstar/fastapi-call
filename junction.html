@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Junction Analysis - Traffic Analysis System</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <style>
+        :root {
+            --primary-blue: #0d6efd;
+            --secondary-blue: #0a58ca;
+            --light-blue: #e7f1ff;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+        }
+        
+        .navbar {
+            background-color: var(--primary-blue);
+        }
+        
+        .card {
+            border: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            transition: transform 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-blue);
+            border-color: var(--primary-blue);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary-blue);
+            border-color: var(--secondary-blue);
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background-color: #000;
+            margin-bottom: 1rem;
+        }
+        
+        #drawingCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .preview-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background-color: #000;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        #previewImage {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+        }
+        
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+        }
+        
+        .drawing-mode {
+            background-color: var(--light-blue);
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .polygon-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+        }
+
+        .polygon-item {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            background-color: var(--light-blue);
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+
+        .polygon-item:hover {
+            background-color: #d0e3ff;
+        }
+
+        .polygon-item.active {
+            background-color: var(--primary-blue);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="#">Traffic Analysis</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">File Management</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="speed.html">Speed Analysis</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="screenline.html">Screenline Analysis</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="pedestrian.html">Pedestrian Analysis</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="junction.html">Junction Analysis</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="saturation_flow.html">Saturation Flow Analysis</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- API Base URL -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">API Configuration</h5>
+                <div class="input-group">
+                    <span class="input-group-text">API URL</span>
+                    <input type="text" id="apiUrl" class="form-control" 
+                           value="http://127.0.0.1:8000" 
+                           placeholder="Enter your FastAPI URL">
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Video Selection and Parameters -->
+            <div class="col-md-4">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Select Video</h5>
+                        <div class="mb-3">
+                            <input type="text" class="form-control" id="video_filename" 
+                                   placeholder="Enter video filename">
+                        </div>
+                        <button class="btn btn-primary w-100" id="loadVideoBtn">Load Video</button>
+                    </div>
+                </div>
+
+                <!-- Analysis Parameters -->
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Analysis Parameters</h5>
+                        <div class="mb-3">
+                            <label class="form-label">Video Start Time</label>
+                            <input type="text" class="form-control" id="video_start_time_str" 
+                                   placeholder="HH:MM:SS" value="09:15:00">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Frame Skip</label>
+                            <input type="number" class="form-control" id="frame_skip" value="1">
+                        </div>
+                        <button class="btn btn-primary w-100" id="startAnalysisBtn" disabled>Start Analysis</button>
+                        <div class="mt-3">
+                            <pre id="analysisResult" class="bg-light p-2 rounded"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Drawing Canvas -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Draw Junction Polygons</h5>
+                        
+                        <!-- Drawing Controls -->
+                        <div class="drawing-mode">
+                            <div class="btn-group w-100" role="group">
+                                <button class="btn btn-outline-primary" id="newPolygonBtn">New Polygon</button>
+                                <button class="btn btn-outline-primary" id="finishPolygonBtn">Finish Polygon</button>
+                                <button class="btn btn-outline-danger" id="deletePolygonBtn">Delete Selected</button>
+                            </div>
+                        </div>
+
+                        <div class="canvas-container">
+                            <canvas id="drawingCanvas"></canvas>
+                            <span class="badge bg-primary status-badge" id="drawingStatus">Click 'New Polygon' to start</span>
+                        </div>
+
+                        <!-- Polygon List -->
+                        <div class="polygon-list" id="polygonList">
+                            <!-- Polygon items will be added here dynamically -->
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-3">
+                            <button class="btn btn-secondary" id="clearBtn">Clear All</button>
+                            <button class="btn btn-primary" id="confirmBtn">Confirm Drawing</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script>
+        // Canvas setup
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        let videoFrame = null;
+        let polygons = [];
+        let currentPolygon = null;
+        let selectedPolygonIndex = -1;
+        let isDrawing = false;
+        let isAnalysisRunning = false;
+
+        // Utility to get the trimmed base URL
+        function getBaseUrl() {
+            return document.getElementById('apiUrl').value.replace(/\/+$/, '');
+        }
+
+        // WebSocket connection handling
+        let ws = null;
+        let currentAnalysisId = null;
+
+        function connectWebSocket(analysisId) {
+            if (ws) {
+                ws.close();
+            }
+
+            document.getElementById('drawingStatus').textContent = 'Connecting...';
+            document.getElementById('drawingStatus').className = 'badge bg-warning status-badge';
+
+            const wsUrl = getBaseUrl().replace('http', 'ws') + `/ws/${analysisId}`;
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = () => {
+                document.getElementById('drawingStatus').textContent = 'Connected';
+                document.getElementById('drawingStatus').className = 'badge bg-success status-badge';
+                currentAnalysisId = analysisId;
+                isAnalysisRunning = true;
+            };
+
+            ws.onmessage = (event) => {
+                // Create an image from the base64 data
+                const img = new Image();
+                img.onload = () => {
+                    // Clear the canvas
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    // Draw the new frame
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                };
+                img.src = `data:image/jpeg;base64,${event.data}`;
+            };
+
+            ws.onclose = () => {
+                document.getElementById('drawingStatus').textContent = 'Disconnected';
+                document.getElementById('drawingStatus').className = 'badge bg-danger status-badge';
+                currentAnalysisId = null;
+                isAnalysisRunning = false;
+            };
+
+            ws.onerror = (error) => {
+                document.getElementById('drawingStatus').textContent = 'Error: ' + error.message;
+                document.getElementById('drawingStatus').className = 'badge bg-danger status-badge';
+            };
+        }
+
+        // Load video frame
+        document.getElementById('loadVideoBtn').onclick = async () => {
+            const videoFilename = document.getElementById('video_filename').value;
+            if (!videoFilename) {
+                alert('Please enter a video filename');
+                return;
+            }
+
+            try {
+                // Create an image element to load the first frame
+                const img = new Image();
+                img.crossOrigin = "anonymous";  // Enable CORS
+                
+                img.onload = () => {
+                    // Set the drawing canvas size
+                    const drawingCanvas = document.getElementById('drawingCanvas');
+                    drawingCanvas.width = img.width;
+                    drawingCanvas.height = img.height;
+                    
+                    // Draw the frame on the drawing canvas
+                    const drawingCtx = drawingCanvas.getContext('2d');
+                    drawingCtx.drawImage(img, 0, 0);
+                    
+                    // Store the frame for redrawing
+                    videoFrame = img;
+                    
+                    // Clear existing points
+                    clearAll();
+                };
+
+                // Set image source to the first frame endpoint
+                img.src = `${getBaseUrl()}/get_first_frame?filename=${encodeURIComponent(videoFilename)}&directory=upload`;
+            } catch (err) {
+                alert('Error loading video: ' + err);
+            }
+        };
+
+        // Drawing controls
+        document.getElementById('newPolygonBtn').onclick = () => {
+            if (isAnalysisRunning) return;
+            if (currentPolygon && currentPolygon.length < 3) {
+                alert('Please finish the current polygon first (at least 3 points)');
+                return;
+            }
+            currentPolygon = [];
+            isDrawing = true;
+            updateDrawingStatus();
+        };
+
+        document.getElementById('finishPolygonBtn').onclick = () => {
+            if (isAnalysisRunning) return;
+            if (!currentPolygon || currentPolygon.length < 3) {
+                alert('A polygon must have at least 3 points');
+                return;
+            }
+            polygons.push(currentPolygon);
+            currentPolygon = null;
+            isDrawing = false;
+            updatePolygonList();
+            updateDrawingStatus();
+            drawAll();
+        };
+
+        document.getElementById('deletePolygonBtn').onclick = () => {
+            if (isAnalysisRunning) return;
+            if (selectedPolygonIndex >= 0) {
+                polygons.splice(selectedPolygonIndex, 1);
+                selectedPolygonIndex = -1;
+                updatePolygonList();
+                drawAll();
+            }
+        };
+
+        // Canvas event listeners
+        canvas.addEventListener('click', (e) => {
+            if (!videoFrame || !isDrawing || isAnalysisRunning) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+
+            currentPolygon.push({ x, y });
+            drawAll();
+            updateDrawingStatus();
+        });
+
+        function drawAll() {
+            if (!videoFrame || isAnalysisRunning) return;
+            
+            // Redraw the video frame
+            ctx.drawImage(videoFrame, 0, 0);
+            
+            // Draw all completed polygons
+            polygons.forEach((polygon, index) => {
+                ctx.beginPath();
+                ctx.moveTo(polygon[0].x, polygon[0].y);
+                polygon.forEach(point => {
+                    ctx.lineTo(point.x, point.y);
+                });
+                ctx.closePath();
+                ctx.strokeStyle = index === selectedPolygonIndex ? '#ff0000' : '#00ff00';
+                ctx.lineWidth = 5;
+                ctx.stroke();
+                
+                polygon.forEach(point => {
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+                    ctx.fillStyle = index === selectedPolygonIndex ? '#ff0000' : '#00ff00';
+                    ctx.fill();
+                });
+            });
+            
+            // Draw current polygon
+            if (currentPolygon && currentPolygon.length > 0) {
+                ctx.beginPath();
+                ctx.moveTo(currentPolygon[0].x, currentPolygon[0].y);
+                currentPolygon.forEach(point => {
+                    ctx.lineTo(point.x, point.y);
+                });
+                // Close the path if there are at least 3 points
+                if (currentPolygon.length > 2) {
+                    ctx.closePath();
+                }
+                ctx.strokeStyle = '#0000ff';
+                ctx.lineWidth = 5;
+                ctx.stroke();
+                
+                currentPolygon.forEach(point => {
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+                    ctx.fillStyle = '#0000ff';
+                    ctx.fill();
+                });
+            }
+        }
+
+        // Add mousemove event listener to show preview line
+        canvas.addEventListener('mousemove', (e) => {
+            if (!videoFrame || !isDrawing || isAnalysisRunning) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (e.clientX - rect.left) * scaleX;
+            const y = (e.clientY - rect.top) * scaleY;
+
+            // Redraw everything
+            drawAll();
+            
+            // Draw preview line from last point to current mouse position
+            if (currentPolygon && currentPolygon.length > 0) {
+                ctx.beginPath();
+                ctx.moveTo(currentPolygon[currentPolygon.length - 1].x, currentPolygon[currentPolygon.length - 1].y);
+                ctx.lineTo(x, y);
+                ctx.strokeStyle = '#0000ff';
+                ctx.lineWidth = 5;
+                ctx.stroke();
+            }
+        });
+
+        function updateDrawingStatus() {
+            const status = document.getElementById('drawingStatus');
+            if (isAnalysisRunning) {
+                status.textContent = 'Analysis in progress...';
+            } else if (isDrawing) {
+                status.textContent = `Current Polygon: ${currentPolygon.length} points`;
+            } else {
+                status.textContent = `Total Polygons: ${polygons.length}`;
+            }
+        }
+
+        function updatePolygonList() {
+            const list = document.getElementById('polygonList');
+            list.innerHTML = '';
+            
+            polygons.forEach((polygon, index) => {
+                const item = document.createElement('div');
+                item.className = `polygon-item ${index === selectedPolygonIndex ? 'active' : ''}`;
+                item.textContent = `Polygon ${index + 1} (${polygon.length} points)`;
+                item.onclick = () => {
+                    if (isAnalysisRunning) return;
+                    selectedPolygonIndex = index;
+                    updatePolygonList();
+                    drawAll();
+                };
+                list.appendChild(item);
+            });
+        }
+
+        function clearAll() {
+            polygons = [];
+            currentPolygon = null;
+            selectedPolygonIndex = -1;
+            isDrawing = false;
+            if (videoFrame) {
+                ctx.drawImage(videoFrame, 0, 0);
+            }
+            updatePolygonList();
+            updateDrawingStatus();
+        }
+
+        // Clear button
+        document.getElementById('clearBtn').onclick = clearAll;
+
+        // Confirm button
+        document.getElementById('confirmBtn').onclick = () => {
+            if (polygons.length === 0) {
+                alert('Please draw at least one polygon');
+                return;
+            }
+            document.getElementById('startAnalysisBtn').disabled = false;
+        };
+
+        // Start analysis
+        document.getElementById('startAnalysisBtn').onclick = async () => {
+            if (polygons.length === 0) {
+                alert('Please draw at least one polygon');
+                return;
+            }
+
+            const fd = new FormData();
+            fd.append('video_filename', document.getElementById('video_filename').value);
+            fd.append('polygons', polygons.map(polygon => 
+                polygon.map(p => `${Math.round(p.x)},${Math.round(p.y)}`).join(';')
+            ).join('|'));
+            fd.append('video_start_time_str', document.getElementById('video_start_time_str').value);
+            fd.append('frame_skip', document.getElementById('frame_skip').value);
+
+            try {
+                const response = await fetch(getBaseUrl() + '/run_junction_analysis', {
+                    method: 'POST',
+                    body: fd
+                });
+                const data = await response.json();
+                document.getElementById('analysisResult').textContent = JSON.stringify(data, null, 2);
+                
+                if (data.analysis_id) {
+                    connectWebSocket(data.analysis_id);
+                }
+            } catch (err) {
+                document.getElementById('analysisResult').textContent = 'Error: ' + err;
+            }
+        };
+    </script>
+</body>
+</html> 

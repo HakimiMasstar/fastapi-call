@@ -2,204 +2,236 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Traffic Analysis API Tester</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Analysis System</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
   <style>
-    body { font-family: sans-serif; margin: 2rem; }
-    section { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1.5rem; }
-    label, input, select { display: block; margin: 0.5rem 0; width: 100%; }
-    input[type="submit"], button { padding: 0.5rem 1rem; }
-    pre { background: #f5f5f5; padding: 0.5rem; max-height: 150px; overflow: auto; }
-    #previewSection { display: none; margin-top: 1rem; }
-    #previewImage { max-width: 100%; height: auto; border: 1px solid #ccc; }
-    .status { margin-top: 1rem; padding: 0.5rem; background: #f0f0f0; }
-  </style>
+        :root {
+            --primary-blue: #0d6efd;
+            --secondary-blue: #0a58ca;
+            --light-blue: #e7f1ff;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+        }
+        
+        .navbar {
+            background-color: var(--primary-blue);
+        }
+        
+        .card {
+            border: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            transition: transform 0.2s;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-blue);
+            border-color: var(--primary-blue);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary-blue);
+            border-color: var(--secondary-blue);
+        }
+        
+        .preview-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background-color: #000;
+            margin-bottom: 1rem;
+        }
+        
+        #previewImage {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background-color: #000;
+            margin-bottom: 1rem;
+        }
+        
+        #drawingCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .status-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+        }
+    </style>
 </head>
 <body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="#">Traffic Analysis</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">File Management</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="speed.html">Speed Analysis</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="screenline.html">Screenline Analysis</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="pedestrian.html">Pedestrian Analysis</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="junction.html">Junction Analysis</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="saturation_flow.html">Saturation Flow Analysis</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
-  <!-- Base URL -->
-  <section>
-    <h2>API Base URL</h2>
-    <label for="apiUrl">Enter your FastAPI URL:</label>
-    <input type="text" id="apiUrl"
-           placeholder="https://abcd1234.ngrok.io"
-           value="http://127.0.0.1:8000">
-  </section>
+    <!-- Main Content -->
+    <div class="container">
+        <!-- API Base URL -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">API Configuration</h5>
+                <div class="input-group">
+                    <span class="input-group-text">API URL</span>
+                    <input type="text" id="apiUrl" class="form-control" 
+                           value="http://127.0.0.1:8000" 
+                           placeholder="Enter your FastAPI URL">
+                </div>
+            </div>
+        </div>
 
-  <!-- Live Preview Section -->
-  <section id="previewSection">
-    <h2>Live Preview</h2>
-    <img id="previewImage" src="" alt="Live Preview">
-    <div class="status" id="previewStatus">Not connected</div>
-  </section>
+        <!-- File Management Section -->
+        <div class="row">
+            <!-- Upload Section -->
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Upload Video</h5>
+                        <div class="mb-3">
+                            <input type="file" class="form-control" id="uploadFile" accept="video/*">
+                        </div>
+                        <button class="btn btn-primary w-100" id="uploadBtn">Upload</button>
+                        <div class="mt-3">
+                            <pre id="uploadResult" class="bg-light p-2 rounded"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-  <!-- 1. Upload Video -->
-  <section id="uploadSection">
-    <h2>1. Upload Video</h2>
-    <input type="file" id="uploadFile">
-    <button id="uploadBtn">Upload</button>
-    <pre id="uploadResult"></pre>
-  </section>
+            <!-- Excel Processing Section -->
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Process Excel</h5>
+                        <div class="mb-3">
+                            <input type="text" class="form-control" id="csv_filename" 
+                                   placeholder="CSV filename">
+                        </div>
+                        <div class="mb-3">
+                            <input type="text" class="form-control" id="template_filename" 
+                                   placeholder="Template filename">
+                        </div>
+                        <div class="mb-3">
+                            <input type="text" class="form-control" id="survey_date" 
+                                   placeholder="Survey Date (DD/MM/YYYY)">
+                        </div>
+                        <div class="mb-3">
+                            <input type="text" class="form-control" id="c4_value" 
+                                   placeholder="Direction A">
+                        </div>
+                        <div class="mb-3">
+                            <input type="text" class="form-control" id="k4_value" 
+                                   placeholder="Direction B">
+                        </div>
+                        <button class="btn btn-primary w-100" id="processExcelBtn">Process Excel</button>
+                        <div class="mt-3">
+                            <pre id="excelResult" class="bg-light p-2 rounded"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-  <!-- 2. Speed Analysis -->
-  <section id="speedSection">
-    <h2>2. Trigger Speed Analysis</h2>
-    <label>Video Filename:<input type="text" id="speed_video_filename" value="video.mp4"></label>
-    <label>Line 1 (x1,y1;x2,y2):<input type="text" id="speed_line1" value="423,431;854,414"></label>
-    <label>Line 2 (x1,y1;x2,y2):<input type="text" id="speed_line2" value="1346,377;951,388"></label>
-    <label>Polygon (x,y;…):<input type="text" id="speed_polygon"
-          value="9,791;3,702;57,609;247,470;464,355;564,314;640,264;884,256;1174,247;1283,329;1460,444;1586,541;1913,825;1909,1070;5,1070;1,802"></label>
-    <label>Speed Source (x,y;…):<input type="text" id="speed_source"
-          value="669,241;1171,235;1913,834;3,814"></label>
-    <label>Target Width:<input type="number" id="speed_tw" value="21"></label>
-    <label>Target Height:<input type="number" id="speed_th" value="70"></label>
-    <label>Frame Skip:<input type="number" id="speed_fs" value="3"></label>
-    <button id="speedBtn">Start Speed Analysis</button>
-    <pre id="speedResult"></pre>
-  </section>
+            <!-- Download Section -->
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Download Files</h5>
+                        <div class="mb-3">
+                            <input type="text" class="form-control" id="dl_filename" 
+                                   placeholder="Enter filename">
+                        </div>
+                        <div class="mb-3">
+                            <select class="form-select" id="dl_directory">
+                                <option value="output">Output Directory</option>
+                                <option value="upload">Upload Directory</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary w-100" id="dlBtn">Get Download Link</button>
+                        <div id="dlLink" class="mt-3"></div>
+                    </div>
+                </div>
+            </div>
 
-  <!-- 3. Screenline (CSV) Analysis -->
-  <section id="screenSection">
-    <h2>3. Trigger CSV Analysis</h2>
-    <label>Video Filename:<input type="text" id="csv_video_filename" value="video.mp4"></label>
-    <label>Line 1:<input type="text" id="csv_line1" value="423,431;854,414"></label>
-    <label>Line 2:<input type="text" id="csv_line2" value="1346,377;951,388"></label>
-    <label>Polygon:<input type="text" id="csv_polygon"
-          value="9,791;3,702;57,609;247,470;464,355;564,314;640,264;884,256;1174,247;1283,329;1460,444;1586,541;1913,825;1909,1070;5,1070;1,802"></label>
-    <label>Video Start Time:<input type="text" id="csv_video_start_time_str" value="18:23:29"></label>
-    <label>Frame Skip:<input type="number" id="csv_fs" value="3"></label>
-    <button id="csvBtn">Start CSV Analysis</button>
-    <pre id="csvResult"></pre>
-  </section>
+            <!-- Delete Section -->
+            <div class="col-md-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Delete Files</h5>
+                        <div class="mb-3">
+                            <input type="text" class="form-control" id="delete_filename" 
+                                   placeholder="Enter filename">
+                        </div>
+                        <div class="mb-3">
+                            <select class="form-select" id="delete_directory">
+                                <option value="output">Output Directory</option>
+                                <option value="upload">Upload Directory</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-danger w-100" id="deleteBtn">Delete File</button>
+                        <div class="mt-3">
+                            <pre id="deleteResult" class="bg-light p-2 rounded"></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-  <!-- 4. Pedestrian Flow Analysis -->
-  <section id="pedSection">
-    <h2>4. Trigger Pedestrian Analysis</h2>
-    <label>Video Filename:<input type="text" id="ped_video_filename" value="people_video.mp4"></label>
-    <label>Line Pts:<input type="text" id="ped_line_pts" value="258,198;422,193"></label>
-    <label>Polygon:<input type="text" id="ped_polygon" value="236,84;426,80;451,336;242,339"></label>
-    <label>Video Start Time:<input type="text" id="ped_video_start_time_str" value="09:15:00"></label>
-    <label>Frame Skip:<input type="number" id="ped_fs" value="1"></label>
-    <button id="pedBtn">Start Pedestrian Analysis</button>
-    <pre id="pedResult"></pre>
-  </section>
-
-  <!-- 5. Speed‑Only (No Lines) Analysis -->
-  <section id="noLineSection">
-    <h2>5. Trigger Speed‑Only (No Lines) Analysis</h2>
-    <label>Video Filename:
-      <input type="text" id="noLine_video_filename" value="video.mp4">
-    </label>
-    <label>Polygon (x,y;…):
-      <input type="text" id="noLine_polygon"
-             value="9,791;3,702;57,609;247,470;464,355;564,314;640,264;884,256;1174,247;1283,329;1460,444;1586,541;1913,825;1909,1070;5,1070;1,802">
-    </label>
-    <label>Speed Source (x,y;…):
-      <input type="text" id="noLine_speed_source"
-             value="669,241;1171,235;1913,834;3,814">
-    </label>
-    <label>Target Width:
-      <input type="number" id="noLine_target_width" value="21">
-    </label>
-    <label>Target Height:
-      <input type="number" id="noLine_target_height" value="70">
-    </label>
-    <label>Frame Skip:
-      <input type="number" id="noLine_frame_skip" value="3">
-    </label>
-    <button id="noLineBtn">Start No‑Line Speed Analysis</button>
-    <pre id="noLineResult"></pre>
-  </section>
-
-  <!-- 6. CSV‑Only (Optional Line) Analysis -->
-  <section id="csvOptionalSection">
-    <h2>6. Trigger CSV‑Only (Optional Line) Analysis</h2>
-    <label>Video Filename:
-      <input type="text" id="csvOpt_video_filename" value="video.mp4">
-    </label>
-    <label>Line 1 (Optional) (x1,y1;x2,y2):
-      <input type="text" id="csvOpt_line1" value="423,431;854,414">
-    </label>
-    <label>Line 2 (Optional) (x1,y1;x2,y2):
-      <input type="text" id="csvOpt_line2" value="1346,377;951,388">
-    </label>
-    <label>Polygon (x,y;…):
-      <input type="text" id="csvOpt_polygon"
-             value="9,791;3,702;57,609;247,470;464,355;564,314;640,264;884,256;1174,247;1283,329;1460,444;1586,541;1913,825;1909,1070;5,1070;1,802">
-    </label>
-    <label>Video Start Time:
-      <input type="text" id="csvOpt_video_start_time_str" value="00:00:00">
-    </label>
-    <label>Frame Skip:
-      <input type="number" id="csvOpt_frame_skip" value="3">
-    </label>
-    <button id="csvOptBtn">Start CSV‑Only (Optional Line) Analysis</button>
-    <pre id="csvOptResult"></pre>
-  </section>
-
-  <!-- 7. Junction Analysis -->
-  <section id="junctionSection">
-    <h2>7. Trigger Junction Analysis</h2>
-    <label>Video Filename:
-      <input type="text" id="junction_video_filename" value="video.mp4">
-    </label>
-    <label>Input Polygons (x1,y1;x2,y2;x3,y3;x4,y4|x1,y1;x2,y2;x3,y3;x4,y4|...):
-      <input type="text" id="junction_in_polygons" 
-             value="81,594;319,559;408,676;126,711|137,253;386,210;588,357;237,398|1131,377;1621,314;1777,372;1285,442|936,663;1365,589;1701,767;1198,877">
-    </label>
-    <label>Output Polygons (x1,y1;x2,y2;x3,y3;x4,y4|x1,y1;x2,y2;x3,y3;x4,y4|...):
-      <input type="text" id="junction_out_polygons"
-             value="44,483;252,453;310,511;72,541|406,204;509,182;810,355;668,368|1315,457;1837,388;1906,418;1402,516|499,741;902,652;1071,799;609,877">
-    </label>
-    <label>Video Start Time:
-      <input type="text" id="junction_video_start_time_str" value="00:00:00">
-    </label>
-    <label>Frame Skip:
-      <input type="number" id="junction_frame_skip" value="3">
-    </label>
-    <button id="junctionBtn">Start Junction Analysis</button>
-    <pre id="junctionResult"></pre>
-  </section>
-
-  <!-- 8. Download Links -->
-  <section id="downloadSection">
-    <h2>8. Download Results</h2>
-    <label>Video Filename:<input type="text" id="dl_video" value="speed_only.mp4"></label>
-    <button id="dlVideoBtn">Get Video Link</button>
-    <div id="dlVideoLink"></div>
-
-    <label>CSV Filename:<input type="text" id="dl_csv" value="flow_rates.csv"></label>
-    <button id="dlCsvBtn">Get CSV Link</button>
-    <div id="dlCsvLink"></div>
-  </section>
-
-  <!-- 9. Excel Processing -->
-  <section id="excelSection">
-    <h2>9. Process Excel Template</h2>
-    <label>CSV Filename:<input type="text" id="excel_csv" value="flow_rates.csv"></label>
-    <label>Template Filename:<input type="text" id="excel_template" value="template.xlsx"></label>
-    <button id="excelBtn">Process Excel</button>
-    <pre id="excelResult"></pre>
-    <div id="excelDownloadLink"></div>
-  </section>
-
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
   <script>
     // Utility to get the trimmed base URL
     function getBaseUrl() {
       return document.getElementById('apiUrl').value.replace(/\/+$/, '');
-    }
-
-    // Generic POST helper using fetch + FormData :contentReference[oaicite:1]{index=1}
-    async function postForm(endpoint, formData, resultElem) {
-      try {
-        const res = await fetch(getBaseUrl() + endpoint, {
-          method: 'POST',
-          body: formData
-        });
-        const json = await res.json();
-        resultElem.textContent = JSON.stringify(json, null, 2);
-      } catch (err) {
-        resultElem.textContent = 'Error: ' + err;
-      }
     }
 
     // Upload
@@ -211,290 +243,42 @@
         resultElem.textContent = 'Error: Please select a file to upload';
         return;
       }
-
-      const file = fileInput.files[0];
-      console.log('Selected file:', file.name, 'Size:', file.size, 'Type:', file.type);
       
       const fd = new FormData();
       fd.append('file', fileInput.files[0]);
-      postForm('/upload_video', fd, document.getElementById('uploadResult'));
-    };
-
-    // WebSocket connection handling
-    let ws = null;
-    let currentAnalysisId = null;
-
-    function connectWebSocket(analysisId) {
-      // Close existing connection if any
-      if (ws) {
-        ws.close();
-      }
-
-      // Show preview section
-      document.getElementById('previewSection').style.display = 'block';
-      document.getElementById('previewStatus').textContent = 'Connecting...';
-
-      // Get WebSocket URL
-      const wsUrl = getBaseUrl().replace('http', 'ws') + `/ws/${analysisId}`;
-      ws = new WebSocket(wsUrl);
-
-      ws.onopen = () => {
-        document.getElementById('previewStatus').textContent = 'Connected';
-        currentAnalysisId = analysisId;
-      };
-
-      ws.onmessage = (event) => {
-        document.getElementById('previewImage').src = `data:image/jpeg;base64,${event.data}`;
-      };
-
-      ws.onclose = () => {
-        document.getElementById('previewStatus').textContent = 'Disconnected';
-        currentAnalysisId = null;
-      };
-
-      ws.onerror = (error) => {
-        document.getElementById('previewStatus').textContent = 'Error: ' + error.message;
-      };
-    }
-
-    // Modified Speed Analysis handler
-    document.getElementById('speedBtn').onclick = async () => {
-      const fd = new FormData();
-      
-      // Get all required fields
-      const fields = {
-        'video_filename': document.getElementById('speed_video_filename'),
-        'line1': document.getElementById('speed_line1'),
-        'line2': document.getElementById('speed_line2'),
-        'polygon': document.getElementById('speed_polygon'),
-        'speed_source': document.getElementById('speed_source'),
-        'target_width': document.getElementById('speed_tw'),
-        'target_height': document.getElementById('speed_th'),
-        'frame_skip': document.getElementById('speed_fs')
-      };
-
-      // Check if all fields exist and have values
-      for (const [key, element] of Object.entries(fields)) {
-        if (!element) {
-          document.getElementById('speedResult').textContent = `Error: Field ${key} not found`;
-          return;
-        }
-        if (!element.value) {
-          document.getElementById('speedResult').textContent = `Error: ${key} is required`;
-          return;
-        }
-        fd.append(key, element.value);
-      }
-
+            
       try {
-        const response = await fetch(getBaseUrl() + '/process_speed_analysis', {
+        const response = await fetch(getBaseUrl() + '/upload_video', {
           method: 'POST',
           body: fd
         });
         const data = await response.json();
-        document.getElementById('speedResult').textContent = JSON.stringify(data, null, 2);
-        
-        // Connect to WebSocket for live preview
-        if (data.analysis_id) {
-          connectWebSocket(data.analysis_id);
-        }
+        resultElem.textContent = JSON.stringify(data, null, 2);
       } catch (err) {
-        document.getElementById('speedResult').textContent = 'Error: ' + err;
+        resultElem.textContent = 'Error: ' + err;
       }
     };
 
-    // CSV Analysis
-    document.getElementById('csvBtn').onclick = async () => {
-      const fd = new FormData();
-      ['video_filename','line1','line2','polygon','video_start_time_str','frame_skip']
-        .forEach(id => {
-          const elementId = 'csv_' + (id === 'frame_skip' ? 'fs' : id);
-          fd.append(id, document.getElementById(elementId).value);
-        });
+    // Process Excel
+    document.getElementById('processExcelBtn').onclick = async () => {
+      const csvFilename = document.getElementById('csv_filename').value;
+      const templateFilename = document.getElementById('template_filename').value;
+      const surveyDate = document.getElementById('survey_date').value;
+      const c4Value = document.getElementById('c4_value').value;
+      const k4Value = document.getElementById('k4_value').value;
+      const resultElem = document.getElementById('excelResult');
       
-      try {
-        const response = await fetch(getBaseUrl() + '/process_screenline_analysis', {
-          method: 'POST',
-          body: fd
-        });
-        const data = await response.json();
-        document.getElementById('csvResult').textContent = JSON.stringify(data, null, 2);
-        
-        // Connect to WebSocket for live preview
-        if (data.analysis_id) {
-          connectWebSocket(data.analysis_id);
-        }
-      } catch (err) {
-        document.getElementById('csvResult').textContent = 'Error: ' + err;
-      }
-    };
-
-    // Pedestrian Analysis
-    document.getElementById('pedBtn').onclick = async () => {
-      const fd = new FormData();
-      ['video_filename','line_pts','polygon','video_start_time_str','frame_skip']
-        .forEach(id => {
-          const elementId = 'ped_' + (id === 'frame_skip' ? 'fs' : id);
-          fd.append(id, document.getElementById(elementId).value);
-        });
-      
-      try {
-        const response = await fetch(getBaseUrl() + '/process_pedestrian_analysis', {
-          method: 'POST',
-          body: fd
-        });
-        const data = await response.json();
-        document.getElementById('pedResult').textContent = JSON.stringify(data, null, 2);
-        
-        // Connect to WebSocket for live preview
-        if (data.analysis_id) {
-          connectWebSocket(data.analysis_id);
-        }
-      } catch (err) {
-        document.getElementById('pedResult').textContent = 'Error: ' + err;
-      }
-    };
-
-    // 5. No‑Line Speed Analysis
-    document.getElementById('noLineBtn').onclick = async () => {
-      const fd = new FormData();
-      // Append each field
-      fd.append('video_filename',
-          document.getElementById('noLine_video_filename').value);
-      fd.append('polygon',
-          document.getElementById('noLine_polygon').value);
-      fd.append('speed_source',
-          document.getElementById('noLine_speed_source').value);
-      fd.append('target_width',
-          document.getElementById('noLine_target_width').value);
-      fd.append('target_height',
-          document.getElementById('noLine_target_height').value);
-      fd.append('frame_skip',
-          document.getElementById('noLine_frame_skip').value);
-
-      try {
-        const response = await fetch(getBaseUrl() + '/process_speed_no_line_analysis', {
-          method: 'POST',
-          body: fd
-        });
-        const data = await response.json();
-        document.getElementById('noLineResult').textContent = JSON.stringify(data, null, 2);
-        
-        // Connect to WebSocket for live preview
-        if (data.analysis_id) {
-          connectWebSocket(data.analysis_id);
-        }
-      } catch (err) {
-        document.getElementById('noLineResult').textContent = 'Error: ' + err;
-      }
-    };
-
-    // 6. CSV‑Only (Optional Line) Analysis
-    document.getElementById('csvOptBtn').onclick = async () => {
-      const fd = new FormData();
-      
-      // Get all fields
-      const fields = {
-        'video_filename': document.getElementById('csvOpt_video_filename'),
-        'line1': document.getElementById('csvOpt_line1'),
-        'line2': document.getElementById('csvOpt_line2'),
-        'polygon': document.getElementById('csvOpt_polygon'),
-        'video_start_time_str': document.getElementById('csvOpt_video_start_time_str'),
-        'frame_skip': document.getElementById('csvOpt_frame_skip')
-      };
-
-      // Check if at least one line is provided
-      if (!fields['line1'].value && !fields['line2'].value) {
-        document.getElementById('csvOptResult').textContent = 'Error: At least one of Line 1 or Line 2 must be provided';
+      if (!csvFilename || !templateFilename) {
+        resultElem.textContent = 'Error: CSV filename and template filename are required';
         return;
       }
-
-      // Append all fields to FormData
-      for (const [key, element] of Object.entries(fields)) {
-        if (element.value) {  // Only append if value exists
-          fd.append(key, element.value);
-        }
-      }
-
-      try {
-        const response = await fetch(getBaseUrl() + '/process_csv_optional_line_analysis', {
-          method: 'POST',
-          body: fd
-        });
-        const data = await response.json();
-        document.getElementById('csvOptResult').textContent = JSON.stringify(data, null, 2);
-        
-        // Connect to WebSocket for live preview
-        if (data.analysis_id) {
-          connectWebSocket(data.analysis_id);
-        }
-      } catch (err) {
-        document.getElementById('csvOptResult').textContent = 'Error: ' + err;
-      }
-    };
-
-    // Junction Analysis
-    document.getElementById('junctionBtn').onclick = async () => {
-      const fd = new FormData();
       
-      // Get all required fields
-      const fields = {
-        'video_filename': document.getElementById('junction_video_filename'),
-        'in_polygons': document.getElementById('junction_in_polygons'),
-        'out_polygons': document.getElementById('junction_out_polygons'),
-        'video_start_time_str': document.getElementById('junction_video_start_time_str'),
-        'frame_skip': document.getElementById('junction_frame_skip')
-      };
-
-      // Check if all fields exist and have values
-      for (const [key, element] of Object.entries(fields)) {
-        if (!element) {
-          document.getElementById('junctionResult').textContent = `Error: Field ${key} not found`;
-          return;
-        }
-        if (!element.value) {
-          document.getElementById('junctionResult').textContent = `Error: ${key} is required`;
-          return;
-        }
-        fd.append(key, element.value);
-      }
-
-      try {
-        const response = await fetch(getBaseUrl() + '/process_junction_analysis', {
-          method: 'POST',
-          body: fd
-        });
-        const data = await response.json();
-        document.getElementById('junctionResult').textContent = JSON.stringify(data, null, 2);
-        
-        // Connect to WebSocket for live preview
-        if (data.analysis_id) {
-          connectWebSocket(data.analysis_id);
-        }
-      } catch (err) {
-        document.getElementById('junctionResult').textContent = 'Error: ' + err;
-      }
-    };
-
-    // Download links
-    document.getElementById('dlVideoBtn').onclick = () => {
-      const name = document.getElementById('dl_video').value;
-      const url  = `${getBaseUrl()}/download_video?filename=${encodeURIComponent(name)}`;
-      document.getElementById('dlVideoLink').innerHTML =
-        `<a href="${url}" target="_blank">Download ${name}</a>`;
-    };
-    document.getElementById('dlCsvBtn').onclick = () => {
-      const name = document.getElementById('dl_csv').value;
-      const url  = `${getBaseUrl()}/download_csv?filename=${encodeURIComponent(name)}`;
-      document.getElementById('dlCsvLink').innerHTML =
-        `<a href="${url}" target="_blank">Download ${name}</a>`;
-    };
-
-    // Excel Processing
-    document.getElementById('excelBtn').onclick = async () => {
       const fd = new FormData();
-      fd.append('csv_filename', document.getElementById('excel_csv').value);
-      fd.append('template_filename', document.getElementById('excel_template').value);
+      fd.append('csv_filename', csvFilename);
+      fd.append('template_filename', templateFilename);
+      if (surveyDate) fd.append('survey_date', surveyDate);
+      if (c4Value) fd.append('c4_value', c4Value);
+      if (k4Value) fd.append('k4_value', k4Value);
       
       try {
         const response = await fetch(getBaseUrl() + '/process_excel', {
@@ -502,17 +286,35 @@
           body: fd
         });
         const data = await response.json();
-        document.getElementById('excelResult').textContent = JSON.stringify(data, null, 2);
-        
-        // Create download link for the processed Excel file
-        if (data.output_excel) {
-          const filename = data.output_excel.split('/').pop();
-          const url = `${getBaseUrl()}/download_excel?filename=${encodeURIComponent(filename)}`;
-          document.getElementById('excelDownloadLink').innerHTML =
-            `<a href="${url}" target="_blank">Download Processed Excel</a>`;
-        }
+        resultElem.textContent = JSON.stringify(data, null, 2);
       } catch (err) {
-        document.getElementById('excelResult').textContent = 'Error: ' + err;
+        resultElem.textContent = 'Error: ' + err;
+      }
+    };
+
+    // Download
+    document.getElementById('dlBtn').onclick = () => {
+      const name = document.getElementById('dl_filename').value;
+      const directory = document.getElementById('dl_directory').value;
+      const url = `${getBaseUrl()}/download_file?filename=${encodeURIComponent(name)}&directory=${directory}`;
+      document.getElementById('dlLink').innerHTML =
+        `<a href="${url}" class="btn btn-primary w-100" target="_blank">Download ${name}</a>`;
+    };
+
+    // Delete
+    document.getElementById('deleteBtn').onclick = async () => {
+      const filename = document.getElementById('delete_filename').value;
+      const directory = document.getElementById('delete_directory').value;
+      const resultElem = document.getElementById('deleteResult');
+      
+      try {
+        const response = await fetch(`${getBaseUrl()}/delete_file?filename=${encodeURIComponent(filename)}&directory=${directory}`, {
+          method: 'DELETE'
+        });
+        const data = await response.json();
+        resultElem.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        resultElem.textContent = 'Error: ' + err;
       }
     };
   </script>

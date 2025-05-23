@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Traffic Analysis API Tester</title>
+  <style>
+    body { font-family: sans-serif; margin: 2rem; }
+    section { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1.5rem; }
+    label, input, select { display: block; margin: 0.5rem 0; width: 100%; }
+    input[type="submit"], button { padding: 0.5rem 1rem; }
+    pre { background: #f5f5f5; padding: 0.5rem; max-height: 150px; overflow: auto; }
+    #previewSection { display: none; margin-top: 1rem; }
+    #previewImage { max-width: 100%; height: auto; border: 1px solid #ccc; }
+    .status { margin-top: 1rem; padding: 0.5rem; background: #f0f0f0; }
+  </style>
+</head>
+<body>
+
+  <!-- Base URL -->
+  <section>
+    <h2>API Base URL</h2>
+    <label for="apiUrl">Enter your FastAPI URL:</label>
+    <input type="text" id="apiUrl"
+           placeholder="https://abcd1234.ngrok.io"
+           value="http://127.0.0.1:8000">
+  </section>
+
+  <!-- Live Preview Section -->
+  <section id="previewSection">
+    <h2>Live Preview</h2>
+    <img id="previewImage" src="" alt="Live Preview">
+    <div class="status" id="previewStatus">Not connected</div>
+  </section>
+
+  <!-- 1. Upload Video -->
+  <section id="uploadSection">
+    <h2>1. Upload Video</h2>
+    <input type="file" id="uploadFile">
+    <button id="uploadBtn">Upload</button>
+    <pre id="uploadResult"></pre>
+  </section>
+
+  <!-- 2. Speed Analysis -->
+  <section id="speedSection">
+    <h2>2. Speed Analysis</h2>
+    <label>Video Filename:<input type="text" id="speed_video_filename" value="video.mp4"></label>
+    <label>Speed Source (x,y;…):<input type="text" id="speed_source"
+          value="669,241;1171,235;1913,834;3,814"></label>
+    <label>Target Width:<input type="number" id="speed_tw" value="21"></label>
+    <label>Target Height:<input type="number" id="speed_th" value="70"></label>
+    <label>Frame Skip:<input type="number" id="speed_fs" value="3"></label>
+    <button id="speedBtn">Start Speed Analysis</button>
+    <pre id="speedResult"></pre>
+  </section>
+
+  <!-- 3. Screenline Analysis -->
+  <section id="screenSection">
+    <h2>3. Screenline Analysis</h2>
+    <label>Video Filename:<input type="text" id="csv_video_filename" value="video.mp4"></label>
+    <label>Line 1 (Optional):<input type="text" id="csv_line1" value="423,431;854,414"></label>
+    <label>Line 2 (Optional):<input type="text" id="csv_line2" value="1346,377;951,388"></label>
+    <label>Polygon:<input type="text" id="csv_polygon"
+          value="9,791;3,702;57,609;247,470;464,355;564,314;640,264;884,256;1174,247;1283,329;1460,444;1586,541;1913,825;1909,1070;5,1070;1,802"></label>
+    <label>Video Start Time:<input type="text" id="csv_video_start_time_str" value="18:23:29"></label>
+    <label>Frame Skip:<input type="number" id="csv_fs" value="3"></label>
+    <button id="csvBtn">Start Screenline Analysis</button>
+    <pre id="csvResult"></pre>
+  </section>
+
+  <!-- 4. Pedestrian Flow Analysis -->
+  <section id="pedSection">
+    <h2>4. Pedestrian Flow Analysis</h2>
+    <label>Video Filename:<input type="text" id="ped_video_filename" value="people_video.mp4"></label>
+    <label>Line Pts:<input type="text" id="ped_line_pts" value="692,356;583,476"></label>
+    <label>Polygon:<input type="text" id="ped_polygon" value="329,463;473,360;925,361;883,501"></label>
+    <label>Video Start Time:<input type="text" id="ped_video_start_time_str" value="09:15:00"></label>
+    <label>Frame Skip:<input type="number" id="ped_fs" value="1"></label>
+    <button id="pedBtn">Start Pedestrian Analysis</button>
+    <pre id="pedResult"></pre>
+  </section>
+
+  <!-- 5. Junction Analysis -->
+  <section id="junctionSection">
+    <h2>5. Junction Analysis</h2>
+    <label>Video Filename:<input type="text" id="junction_video_filename" value="junction_video.mp4"></label>
+    <label>Polygons (separate with |):<input type="text" id="junction_polygons" 
+          value="185,309;677,259;842,339;232,419|1136,375;1492,337;1767,438;1405,521|495,747;1393,591;1581,688;592,874|6,485;196,459;364,700;20,742"></label>
+    <label>Video Start Time:<input type="text" id="junction_video_start_time_str" value="00:00:00"></label>
+    <label>Frame Skip:<input type="number" id="junction_fs" value="1"></label>
+    <button id="junctionBtn">Start Junction Analysis</button>
+    <pre id="junctionResult"></pre>
+  </section>
+
+  <!-- 6. Saturation Flow Analysis -->
+  <section id="saturationSection">
+    <h2>6. Saturation Flow Analysis</h2>
+    <label>Video Filename:<input type="text" id="saturation_video_filename" value="video.mp4"></label>
+    <label>Polygon:<input type="text" id="saturation_polygon" 
+          value="873,277;1138,288;230,730;57,602"></label>
+    <label>Video Start Time:<input type="text" id="saturation_video_start_time_str" value="00:00:00"></label>
+    <label>Frame Skip:<input type="number" id="saturation_fs" value="1"></label>
+    <label>In Zone Threshold (seconds):<input type="number" id="saturation_in_zone_threshold" value="3.0" step="0.1"></label>
+    <label>Ignored to Active Threshold (seconds):<input type="number" id="saturation_ignored_to_active_threshold" value="4.0" step="0.1"></label>
+    <label>Exit Timeout Threshold (seconds):<input type="number" id="saturation_exit_timeout_threshold" value="4.0" step="0.1"></label>
+    <button id="saturationBtn">Start Saturation Flow Analysis</button>
+    <pre id="saturationResult"></pre>
+  </section>
+
+  <!-- 7. Download Results -->
+  <section id="downloadSection">
+    <h2>7. Download Results</h2>
+    <label>Filename:<input type="text" id="dl_filename" value="speed_20240321_123456.mp4"></label>
+    <button id="dlBtn">Get Download Link</button>
+    <div id="dlLink"></div>
+  </section>
+
+  <!-- 8. Delete Files -->
+  <section id="deleteSection">
+    <h2>8. Delete Files</h2>
+    <label>Filename:<input type="text" id="delete_filename" value="speed_20240321_123456.mp4"></label>
+    <label>Directory:
+      <select id="delete_directory">
+        <option value="output">Output</option>
+        <option value="upload">Upload</option>
+      </select>
+    </label>
+    <button id="deleteBtn">Delete File</button>
+    <pre id="deleteResult"></pre>
+  </section>
+
+  <!-- 9. Excel Processing -->
+  <section id="excelSection">
+    <h2>9. Process Excel Template</h2>
+    <label>CSV Filename:<input type="text" id="excel_csv" value="flow_rates.csv"></label>
+    <label>Template Filename:<input type="text" id="excel_template" value="template.xlsx"></label>
+    <button id="excelBtn">Process Excel</button>
+    <pre id="excelResult"></pre>
+    <div id="excelDownloadLink"></div>
+  </section>
+
+  <script>
+    // Utility to get the trimmed base URL
+    function getBaseUrl() {
+      return document.getElementById('apiUrl').value.replace(/\/+$/, '');
+    }
+
+    // Generic POST helper using fetch + FormData
+    async function postForm(endpoint, formData, resultElem) {
+      try {
+        const res = await fetch(getBaseUrl() + endpoint, {
+          method: 'POST',
+          body: formData
+        });
+        const json = await res.json();
+        resultElem.textContent = JSON.stringify(json, null, 2);
+      } catch (err) {
+        resultElem.textContent = 'Error: ' + err;
+      }
+    }
+
+    // Upload
+    document.getElementById('uploadBtn').onclick = async () => {
+      const fileInput = document.getElementById('uploadFile');
+      const resultElem = document.getElementById('uploadResult');
+      
+      if (!fileInput.files || fileInput.files.length === 0) {
+        resultElem.textContent = 'Error: Please select a file to upload';
+        return;
+      }
+
+      const file = fileInput.files[0];
+      console.log('Selected file:', file.name, 'Size:', file.size, 'Type:', file.type);
+      
+      const fd = new FormData();
+      fd.append('file', fileInput.files[0]);
+      postForm('/upload_video', fd, document.getElementById('uploadResult'));
+    };
+
+    // WebSocket connection handling
+    let ws = null;
+    let currentAnalysisId = null;
+
+    function connectWebSocket(analysisId) {
+      if (ws) {
+        ws.close();
+      }
+
+      document.getElementById('previewSection').style.display = 'block';
+      document.getElementById('previewStatus').textContent = 'Connecting...';
+
+      const wsUrl = getBaseUrl().replace('http', 'ws') + `/ws/${analysisId}`;
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        document.getElementById('previewStatus').textContent = 'Connected';
+        currentAnalysisId = analysisId;
+      };
+
+      ws.onmessage = (event) => {
+        document.getElementById('previewImage').src = `data:image/jpeg;base64,${event.data}`;
+      };
+
+      ws.onclose = () => {
+        document.getElementById('previewStatus').textContent = 'Disconnected';
+        currentAnalysisId = null;
+      };
+
+      ws.onerror = (error) => {
+        document.getElementById('previewStatus').textContent = 'Error: ' + error.message;
+      };
+    }
+
+    // Speed Analysis
+    document.getElementById('speedBtn').onclick = async () => {
+      const fd = new FormData();
+      const fields = {
+        'video_filename': document.getElementById('speed_video_filename'),
+        'speed_source': document.getElementById('speed_source'),
+        'target_width': document.getElementById('speed_tw'),
+        'target_height': document.getElementById('speed_th'),
+        'frame_skip': document.getElementById('speed_fs')
+      };
+
+      for (const [key, element] of Object.entries(fields)) {
+        if (!element.value) {
+          document.getElementById('speedResult').textContent = `Error: ${key} is required`;
+          return;
+        }
+        fd.append(key, element.value);
+      }
+
+      try {
+        const response = await fetch(getBaseUrl() + '/run_speed_analysis', {
+          method: 'POST',
+          body: fd
+        });
+        const data = await response.json();
+        document.getElementById('speedResult').textContent = JSON.stringify(data, null, 2);
+        
+        if (data.analysis_id) {
+          connectWebSocket(data.analysis_id);
+        }
+      } catch (err) {
+        document.getElementById('speedResult').textContent = 'Error: ' + err;
+      }
+    };
+
+    // Screenline Analysis
+    document.getElementById('csvBtn').onclick = async () => {
+      const fd = new FormData();
+      const fields = {
+        'video_filename': document.getElementById('csv_video_filename'),
+        'line1': document.getElementById('csv_line1'),
+        'line2': document.getElementById('csv_line2'),
+        'polygon': document.getElementById('csv_polygon'),
+        'video_start_time_str': document.getElementById('csv_video_start_time_str'),
+        'frame_skip': document.getElementById('csv_fs')
+      };
+
+      // Check if at least one line is provided
+      if (!fields['line1'].value && !fields['line2'].value) {
+        document.getElementById('csvResult').textContent = 'Error: At least one of Line 1 or Line 2 must be provided';
+        return;
+      }
+
+      // Append all fields to FormData
+      for (const [key, element] of Object.entries(fields)) {
+        if (element.value) {  // Only append if value exists
+          fd.append(key, element.value);
+        }
+      }
+
+      try {
+        const response = await fetch(getBaseUrl() + '/run_basic_screenline_analysis', {
+          method: 'POST',
+          body: fd
+        });
+        const data = await response.json();
+        document.getElementById('csvResult').textContent = JSON.stringify(data, null, 2);
+        
+        if (data.analysis_id) {
+          connectWebSocket(data.analysis_id);
+        }
+      } catch (err) {
+        document.getElementById('csvResult').textContent = 'Error: ' + err;
+      }
+    };
+
+    // Pedestrian Analysis
+    document.getElementById('pedBtn').onclick = async () => {
+      const fd = new FormData();
+      ['video_filename','line_pts','polygon','video_start_time_str','frame_skip']
+        .forEach(id => {
+          const elementId = 'ped_' + (id === 'frame_skip' ? 'fs' : id);
+          fd.append(id, document.getElementById(elementId).value);
+        });
+      
+      try {
+        const response = await fetch(getBaseUrl() + '/run_pedestrian_flow_analysis', {
+          method: 'POST',
+          body: fd
+        });
+        const data = await response.json();
+        document.getElementById('pedResult').textContent = JSON.stringify(data, null, 2);
+        
+        if (data.analysis_id) {
+          connectWebSocket(data.analysis_id);
+        }
+      } catch (err) {
+        document.getElementById('pedResult').textContent = 'Error: ' + err;
+      }
+    };
+
+    // Junction Analysis
+    document.getElementById('junctionBtn').onclick = async () => {
+      const fd = new FormData();
+      const fields = {
+        'video_filename': document.getElementById('junction_video_filename'),
+        'polygons': document.getElementById('junction_polygons'),
+        'video_start_time_str': document.getElementById('junction_video_start_time_str'),
+        'frame_skip': document.getElementById('junction_fs')
+      };
+
+      for (const [key, element] of Object.entries(fields)) {
+        if (!element.value) {
+          document.getElementById('junctionResult').textContent = `Error: ${key} is required`;
+          return;
+        }
+        fd.append(key, element.value);
+      }
+
+      try {
+        const response = await fetch(getBaseUrl() + '/run_junction_analysis', {
+          method: 'POST',
+          body: fd
+        });
+        const data = await response.json();
+        document.getElementById('junctionResult').textContent = JSON.stringify(data, null, 2);
+        
+        if (data.analysis_id) {
+          connectWebSocket(data.analysis_id);
+        }
+      } catch (err) {
+        document.getElementById('junctionResult').textContent = 'Error: ' + err;
+      }
+    };
+
+    // Saturation Flow Analysis
+    document.getElementById('saturationBtn').onclick = async () => {
+      const fd = new FormData();
+      const fields = {
+        'video_filename': document.getElementById('saturation_video_filename'),
+        'polygon': document.getElementById('saturation_polygon'),
+        'video_start_time_str': document.getElementById('saturation_video_start_time_str'),
+        'frame_skip': document.getElementById('saturation_fs'),
+        'in_zone_threshold': document.getElementById('saturation_in_zone_threshold'),
+        'ignored_to_active_threshold': document.getElementById('saturation_ignored_to_active_threshold'),
+        'exit_timeout_threshold': document.getElementById('saturation_exit_timeout_threshold')
+      };
+
+      for (const [key, element] of Object.entries(fields)) {
+        if (!element.value) {
+          document.getElementById('saturationResult').textContent = `Error: ${key} is required`;
+          return;
+        }
+        fd.append(key, element.value);
+      }
+
+      try {
+        const response = await fetch(getBaseUrl() + '/run_saturation_flow_analysis', {
+          method: 'POST',
+          body: fd
+        });
+        const data = await response.json();
+        document.getElementById('saturationResult').textContent = JSON.stringify(data, null, 2);
+        
+        if (data.analysis_id) {
+          connectWebSocket(data.analysis_id);
+        }
+      } catch (err) {
+        document.getElementById('saturationResult').textContent = 'Error: ' + err;
+      }
+    };
+
+    // Download link
+    document.getElementById('dlBtn').onclick = () => {
+      const name = document.getElementById('dl_filename').value;
+      const url = `${getBaseUrl()}/download_file?filename=${encodeURIComponent(name)}`;
+      document.getElementById('dlLink').innerHTML =
+        `<a href="${url}" target="_blank">Download ${name}</a>`;
+    };
+
+    // Delete file
+    document.getElementById('deleteBtn').onclick = async () => {
+      const filename = document.getElementById('delete_filename').value;
+      const directory = document.getElementById('delete_directory').value;
+      const resultElem = document.getElementById('deleteResult');
+      
+      try {
+        const response = await fetch(`${getBaseUrl()}/delete_file?filename=${encodeURIComponent(filename)}&directory=${directory}`, {
+          method: 'DELETE'
+        });
+        const data = await response.json();
+        resultElem.textContent = JSON.stringify(data, null, 2);
+      } catch (err) {
+        resultElem.textContent = 'Error: ' + err;
+      }
+    };
+
+    // Excel Processing
+    document.getElementById('excelBtn').onclick = async () => {
+      const fd = new FormData();
+      fd.append('csv_filename', document.getElementById('excel_csv').value);
+      fd.append('template_filename', document.getElementById('excel_template').value);
+      
+      try {
+        const response = await fetch(getBaseUrl() + '/process_excel', {
+          method: 'POST',
+          body: fd
+        });
+        const data = await response.json();
+        document.getElementById('excelResult').textContent = JSON.stringify(data, null, 2);
+        
+        if (data.output_excel) {
+          const filename = data.output_excel.split('/').pop();
+          const url = `${getBaseUrl()}/download_excel?filename=${encodeURIComponent(filename)}`;
+          document.getElementById('excelDownloadLink').innerHTML =
+            `<a href="${url}" target="_blank">Download Processed Excel</a>`;
+        }
+      } catch (err) {
+        document.getElementById('excelResult').textContent = 'Error: ' + err;
+      }
+    };
+  </script>
+</body>
+</html>
